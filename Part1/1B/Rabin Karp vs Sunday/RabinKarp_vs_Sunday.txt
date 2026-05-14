@@ -1,3 +1,3 @@
-RabinKarp_time(us): 7362.2
-Sunday_time(us): 49918.4
-Speedup(Sunday/RabinKarp): 6.78037x
+RabinKarp_time(us): 18787.5
+Sunday_time(us): 149227
+Speedup(Sunday/RabinKarp): 7.94286x

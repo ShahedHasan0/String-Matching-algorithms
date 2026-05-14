@@ -1,3 +1,3 @@
-KMP_time(us): 7263.54
-RabinKarp_time(us): 24196.3
-Speedup(RK/KMP): 3.3312x
+KMP_time(us): 19983.8
+RabinKarp_time(us): 66882.3
+Speedup(RK/KMP): 3.34682x

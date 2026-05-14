@@ -1,3 +1,3 @@
-GusfieldZ_time(us): 35583.9
-Sunday_time(us): 1915.9
-Speedup(Z/Sunday): 18.5729x
+GusfieldZ_time(us): 93474.9
+Sunday_time(us): 4868.82
+Speedup(Z/Sunday): 19.1987x
