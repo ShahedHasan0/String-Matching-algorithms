@@ -1,7 +1,10 @@
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <vector>
 #include <string>
 #include <chrono>
+#include <functional>
 
 using namespace std;
 using namespace std::chrono;
@@ -57,41 +60,43 @@ vector<int> binarySunday(const string& pattern, const string& text) {
     return occurrences;
 }
 
+double measure_time(function<vector<int>(const string&, const string&)> func,
+                    const string& T, const string& P, int runs) {
+
+    auto start = high_resolution_clock::now();
+
+    vector<int> res;
+    for (int i = 0; i < runs; i++) {
+        res = func(P, T);   // ⚠️ note order (your functions use pattern, text)
+    }
+
+    auto end = high_resolution_clock::now();
+
+    return duration_cast<microseconds>(end - start).count() / (double)runs;
+}
+
 int main() {
-    // Benchmark case: 100k text with no possible match for the pattern.
-    // This favors Sunday shifts and is used to demonstrate empirical speed gap.
-    string T(1000000, 'E');
+    ofstream file("Sunday_vs_Z.txt");
+
+    int n = 1000000;
+    string T(n, 'E');   // no match case
+
     string P = "ABCDABCDABCD";
 
-    const int repeats = 100;
+    int runs = 50;
 
-    // Time both algorithms on exactly the same input.
-    vector<int> resZ;
-    vector<int> resBS;
+    double z_time = measure_time(gusfieldZ, T, P, runs);
+    double s_time = measure_time(binarySunday, T, P, runs);
 
-    auto startZ = high_resolution_clock::now();
-    for (int i = 0; i < repeats; i++) {
-        resZ = gusfieldZ(P, T);
-    }
-    auto endZ = high_resolution_clock::now();
-    double durationZ = duration_cast<microseconds>(endZ - startZ).count() / 1000.0 / repeats;
+    double ratio = z_time / s_time;
 
-    auto startBS = high_resolution_clock::now();
-    for (int i = 0; i < repeats; i++) {
-        resBS = binarySunday(P, T);
-    }
-    auto endBS = high_resolution_clock::now();
-    double durationBS = duration_cast<microseconds>(endBS - startBS).count() / 1000.0 / repeats;;
+    file << "GusfieldZ_time(us): " << z_time << "\n";
+    file << "Sunday_time(us): " << s_time << "\n";
+    file << "Speedup(Z/Sunday): " << ratio << "x\n";
 
-    cout << "Gusfield Z: " << durationZ << " ms, matches found: " << resZ.size() << "\n";
-    cout << "Binary Sunday: " << durationBS << " ms, matches found: " << resBS.size() << "\n";
+    file.close();
 
-    // Assignment check: Sunday should be at least 2x faster in this crafted case.
-    if (durationBS * 2 <= durationZ) {
-        cout << "Binary Sunday is at least twice as fast as Gusfield Z.\n";
-    } else {
-        cout << "Binary Sunday is NOT twice as fast in this run.\n";
-    }
+    cout << "Saved to Sunday_vs_Z.txt\n";
 
     return 0;
 }
