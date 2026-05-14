@@ -1,6 +1,8 @@
 #include <iostream>
-#include <string>
+#include <fstream>
 #include <chrono>
+#include <string>
+#include <functional>
 #include <vector>
 
 using namespace std;
@@ -37,21 +39,27 @@ int KMPsearch(const string &T, const string &P) {
     return count;
 }
 
-const long long base = 256;
-const long long mod = 2;
-
 int RabinKarpsearch(const string &T, const string &P) {
-    // Rabin-Karp uses rolling hashes, but hash matches still need a full check.
     int n = (int)T.size(), m = (int)P.size(), count = 0;
-    if (m > n) return 0;
-    long long pHash = 0, tHash = 0, h = 1;
-    for (int i = 0; i < m - 1; i++) h = (h * base) % mod;
-    for (int i = 0; i < m; i++) {
-        pHash = (pHash * base + P[i]) % mod;
-        tHash = (tHash * base + T[i]) % mod;
+    if (m == 0 || m > n) return 0;
+
+    long long d = 256;
+    long long q = 2;   // intentionally small to create many collisions
+    long long h = 1;
+    long long p_hash = 0;
+    long long t_hash = 0;
+
+    for (int i = 0; i < m - 1; i++) {
+        h = (h * d) % q;
     }
+
+    for (int i = 0; i < m; i++) {
+        p_hash = (d * p_hash + P[i]) % q;
+        t_hash = (d * t_hash + T[i]) % q;
+    }
+
     for (int i = 0; i <= n - m; i++) {
-        if (pHash == tHash) {
+        if (p_hash == t_hash) {
             bool match = true;
             for (int j = 0; j < m; j++) {
                 if (T[i + j] != P[j]) {
@@ -61,57 +69,56 @@ int RabinKarpsearch(const string &T, const string &P) {
             }
             if (match) count++;
         }
+
         if (i < n - m) {
-            tHash = (tHash - T[i] * h % mod + mod) % mod;
-            tHash = (tHash * base + T[i + m]) % mod;
+            t_hash = (d * (t_hash - T[i] * h) + T[i + m]) % q;
+            if (t_hash < 0) t_hash += q;
         }
     }
+
     return count;
 }
 
+double measure_time(function<int(const string&, const string&)> func,
+                    const string& T, const string& P, int runs) {
+    auto start = high_resolution_clock::now();
+
+    int res;
+    for (int i = 0; i < runs; i++) {
+        res = func(T, P);
+    }
+
+    auto end = high_resolution_clock::now();
+
+    return duration_cast<microseconds>(end - start).count() / (double)runs;
+}
+
 int main() {
-    // Large deterministic text (500kB) to satisfy assignment size requirement.
+    ofstream file("KMP_vs_RabinKarp.txt");
+
     int n = 500000;
     string T;
     T.reserve(n);
-
     for (int i = 0; i < n; i++) {
         T.push_back((i % 2 == 0) ? 'a' : 'b');
     }
 
-    // Pattern selected so many overlaps occur in alternating "abab..." text.
-    string P = "ababa";
+    string P="ababa";
 
-    // Force at least one known match near the end for reproducible correctness.
-    for (int i = 0; i < (int)P.size(); i++) {
-        T[n - (int)P.size() + i] = P[i];
-    }
+    int runs = 50;
 
-    // Average over many runs to reduce timer noise.
-    int runs = 100;
-    long long totalKMP = 0, totalRK = 0;
-    int resKMP = 0, resRK = 0;
+    double kmp_time = measure_time(KMPsearch, T, P, runs);
+    double rk_time  = measure_time(RabinKarpsearch, T, P, runs);
 
-    // Same text and pattern are reused every time so the comparison is fair.
-    for (int i = 0; i < runs; i++) {
-        auto start = steady_clock::now();
-        resKMP = KMPsearch(T, P);
-        auto end = steady_clock::now();
-        totalKMP += duration_cast<microseconds>(end - start).count();
+    double ratio = rk_time / kmp_time;
 
-        start = steady_clock::now();
-        resRK = RabinKarpsearch(T, P);
-        end = steady_clock::now();
-        totalRK += duration_cast<microseconds>(end - start).count();
-    }
+    file << "KMP_time(us): " << kmp_time << "\n";
+    file << "RabinKarp_time(us): " << rk_time << "\n";
+    file << "Speedup(RK/KMP): " << ratio << "x\n";
 
-    cout << "Text size: " << T.size() << ", Pattern size: " << P.size() << "\n";
-    cout << "Average KMP time: " << totalKMP / (double)runs << " us\n";
-    cout << "Average Rabin-Karp time: " << totalRK / (double)runs << " us\n";
-    cout << "KMP found " << resKMP << " occurrences\n";
-    cout << "Rabin-Karp found " << resRK << " occurrences\n";
-    // If this ratio is >= 2, KMP is at least twice as fast as Rabin-Karp.
-    cout << "Speedup (Rabin-Karp / KMP): " << (totalRK / (double)totalKMP) << "x\n";
+    file.close();
+
+    cout << "Saved to KMP_vs_RabinKarp.txt\n";
 
     return 0;
 }
