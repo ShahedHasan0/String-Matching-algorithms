@@ -197,9 +197,9 @@ void logToCSV(
 // ---------- MAIN ----------
 int main() {
     // Input files: source text and search patterns.
-    ifstream chapterFile("english_names.txt");
+    ifstream chapterFile("book.txt");
     if (!chapterFile.is_open()) {
-        cerr << "Error can't open english_names.txt\n";
+        cerr << "Error can't open book.txt\n";
         return 1;
     }
     
