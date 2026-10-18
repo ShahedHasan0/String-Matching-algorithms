@@ -154,9 +154,6 @@ bool sundayMatch(const std::string& text, const std::string& pattern) {
         if (found == std::string::npos)
             return false;
 
-        if (s == 0 && !startsWithStar && found != 0)
-            return false;
-
         currentPos = found + segment.size();
     }
 

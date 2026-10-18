@@ -67,7 +67,7 @@ double measure_time(function<vector<int>(const string&, const string&)> func,
 
     vector<int> res;
     for (int i = 0; i < runs; i++) {
-        res = func(P, T);   // ⚠️ note order (your functions use pattern, text)
+        res = func(P, T);
     }
 
     auto end = high_resolution_clock::now();
